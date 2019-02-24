@@ -9,6 +9,7 @@ import           Network.Curl (curlPost)
 import           Data.List (isPrefixOf)
 import           WebhookUtil
 import           Duckling.Core
+import           Duckling.Resolve (DucklingTime)
 import           Duckling.Dimensions
 import           Duckling.Testing.Types
 import           Data.Time.LocalTime
@@ -24,8 +25,9 @@ genEndPoint = concat ["https://graph.facebook.com/v2.6/",
 
 postMessage :: String -> String -> IO ()
 postMessage psid message = do
-    pmessage <- parseMessage message
-    let message' = case pmessage of
+    ctz <- return.fromZonedTime =<< getZonedTime
+    let pmessage = parseMessage message ctz
+        message' = case pmessage of
                 Left v -> formatMessage v
                 Right v -> formatMessage v
     curlPost (genEndPoint) ["messaging_type=RESPONSE",
@@ -33,16 +35,14 @@ postMessage psid message = do
                             "message=%7B%0A%20%20%22text%22%3A%20%22"++message'++"%22%0A%7D"
                            ]
 
-parseMessage :: String -> IO (Either String String)
-parseMessage message = do
-    ctz <- return.fromZonedTime =<< getZonedTime
-    let
-        context = Context {referenceTime = ctz, locale = makeLocale EN Nothing}
-        options = testOptions
-        parseResult = Duckling.Core.parse (pack message) context options (Duckling.Dimensions.allDimensions EN)
-    case (length parseResult) of
-        0 -> return (Left message)
-        _ -> return (Right (unpack $ toJText (head parseResult)))
+parseMessage :: String -> DucklingTime -> (Either String String)
+parseMessage message ctz =
+   let context = Context {referenceTime = ctz, locale = makeLocale EN Nothing}
+       options = testOptions
+       parseResult = Duckling.Core.parse (pack message) context options (Duckling.Dimensions.allDimensions EN)
+   in case (length parseResult) of
+       0 -> Left message
+       _ -> Right (unpack $ toJText (head parseResult))
 
 formatMessage :: String -> String
 formatMessage message = foldr replacement ("You have typed:\n" ++ message) replacementInput
