@@ -37,11 +37,7 @@ genMessagingWelcome v = getMessaging0 v
                             >>= getObject "postback"
                             >>= getObject "payload"
                             >>= getString
-                            >>= \t -> do
-                                     if t == "GET_STARTED" then
-                                         Just (MessagingWelcome v)
-                                     else
-                                         Nothing
+                            >>= (\_ -> return (MessagingWelcome v))
 
 genMessages :: Text -> Maybe WebhookEvent
 genMessages v = getMessaging0 v
@@ -67,3 +63,9 @@ getMessageText v = getMessaging0 v
                    >>= getObject "message"
                    >>= getObject "text"
                    >>= getString
+
+getMessagePayload :: Text -> Maybe Text
+getMessagePayload v = getMessaging0 v
+                      >>= getObject "postback"
+                      >>= getObject "payload"
+                      >>= getString
