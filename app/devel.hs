@@ -55,7 +55,7 @@ postWebhookR = do
                                                $(logInfo) v
             Just (Messages v) ->            do $(logInfo) "Processing Messages"
                                                liftIO $ Parrot.echoMessage v
-            Just (MessagingWelcome v) ->    do $(logInfo) "Get started welcome"
+            Just (MessagingPayload v) ->    do $(logInfo) "Processing MessagingPayload"
                                                $(logInfo) v
             Nothing ->                      return ()
         )

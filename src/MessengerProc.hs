@@ -14,4 +14,4 @@ import           Control.Applicative ((<|>))
 import           WebhookUtil
 
 genWebhook :: Text -> Maybe WebhookEvent
-genWebhook v = genMessagingReferrals v <|> genMessagingWelcome v <|> genMessages v
+genWebhook v = genMessagingReferrals v <|> genMessagingPayload v <|> genMessages v

@@ -22,7 +22,7 @@ getString :: Value -> Maybe Text
 getString (String v) = Just v
 getString _ = Nothing
 
-data WebhookEvent = Messages Text | MessagingReferrals Text | MessagingWelcome Text deriving (Show)
+data WebhookEvent = Messages Text | MessagingReferrals Text | MessagingPayload Text deriving (Show)
 
 genMessagingReferrals :: Text -> Maybe WebhookEvent
 genMessagingReferrals v = getMessaging0 v
@@ -32,12 +32,12 @@ genMessagingReferrals v = getMessaging0 v
                             >>= getString
                             >>= (\_ -> return (MessagingReferrals v))
 
-genMessagingWelcome :: Text -> Maybe WebhookEvent
-genMessagingWelcome v = getMessaging0 v
+genMessagingPayload :: Text -> Maybe WebhookEvent
+genMessagingPayload v = getMessaging0 v
                             >>= getObject "postback"
                             >>= getObject "payload"
                             >>= getString
-                            >>= (\_ -> return (MessagingWelcome v))
+                            >>= (\_ -> return (MessagingPayload v))
 
 genMessages :: Text -> Maybe WebhookEvent
 genMessages v = getMessaging0 v
