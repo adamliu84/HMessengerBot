@@ -46,6 +46,21 @@ postFixPreRegistrationRequestButton psid = do
                            "message=%7B%0A%20%20%20%20%22text%22%3A%20%22Do%20you%20wish%20to%20be%20notify%20when%20the%20game%20is%20launch%22%2C%0A%20%20%20%20%22quick_replies%22%3A%5B%0A%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%22content_type%22%3A%22text%22%2C%0A%20%20%20%20%20%20%20%20%22title%22%3A%22Yes%22%2C%0A%20%20%20%20%20%20%20%20%22payload%22%3A%22YES_NOTIFY_PAYLOAD%22%2C%0A%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%22content_type%22%3A%22text%22%2C%0A%20%20%20%20%20%20%20%20%22title%22%3A%22No%22%2C%0A%20%20%20%20%20%20%20%20%22payload%22%3A%22NO_NOTIFY_PAYLOAD%22%2C%0A%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%5D%0A%20%20%7D"
                           ]
 
+postFixUpdateRequestButton :: String -> IO ()
+postFixUpdateRequestButton psid = do
+    curlPost (genEndPoint) ["messaging_type=RESPONSE",
+                            "recipient=%7B%0A%20%20%22id%22%3A%20%22"++psid++"%22%0A%7D",
+                            "message=%7B%0A%20%20%20%20%22text%22%3A%20%22Commander!%20Do%20you%20wish%20to%20know%20more%20about%20the%20version%20update%3F%22%2C%0A%20%20%20%20%22quick_replies%22%3A%5B%0A%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%22content_type%22%3A%22text%22%2C%0A%20%20%20%20%20%20%20%20%22title%22%3A%22Yes%20for%20update%22%2C%0A%20%20%20%20%20%20%20%20%22payload%22%3A%22YES_UPDATE_PAYLOAD%22%2C%0A%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%22content_type%22%3A%22text%22%2C%0A%20%20%20%20%20%20%20%20%22title%22%3A%22No%22%2C%0A%20%20%20%20%20%20%20%20%22payload%22%3A%22NO_UPDATE_PAYLOAD%22%2C%0A%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%5D%0A%20%20%7D"
+                           ]
+
+postFixSurveyRequestButton :: String -> IO ()
+postFixSurveyRequestButton psid = do
+   curlPost (genEndPoint) ["messaging_type=RESPONSE",
+                           "recipient=%7B%0A%20%20%22id%22%3A%20%22"++psid++"%22%0A%7D",
+                           "message=%7B%0A%20%20%20%20%22text%22%3A%20%22Do%20you%20think%20the%20game%20will%20be%20balance%3F%22%2C%0A%20%20%20%20%22quick_replies%22%3A%5B%0A%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%22content_type%22%3A%22text%22%2C%0A%20%20%20%20%20%20%20%20%22title%22%3A%22Yes%20the%20game%20balance%20will%20be%20fix%20with%20this%20update%22%2C%0A%20%20%20%20%20%20%20%20%22payload%22%3A%22YES_SURVEY_PAYLOAD%22%2C%0A%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%22content_type%22%3A%22text%22%2C%0A%20%20%20%20%20%20%20%20%22title%22%3A%22No%20the%20game%20balance%20is%20broken%20with%20this%20update%22%2C%0A%20%20%20%20%20%20%20%20%22payload%22%3A%22NO_SURVEY_PAYLOAD%22%2C%0A%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%5D%0A%20%20%7D"
+                          ]
+
+
 postFixShareButton :: String -> IO ()
 postFixShareButton psid = do
  curlPost (genEndPoint) ["messaging_type=RESPONSE",
@@ -71,6 +86,7 @@ demoUpdate x = do
     postFixImage x
     postMessage x "Good morning Commader, we have a NEW update"
     postMessage x "Version 3.1.4 update: \n - All guns plus 10 ATK \n - All armours minus 10 DEF \n - All magic comes with protection buff"
+    postFixSurveyRequestButton x
 
 demoShare :: String -> IO ()
 demoShare = postFixShareButton
@@ -87,17 +103,28 @@ processPayload v = case (getSenderId v) of
                             where x' = unpack x
                     Nothing -> return ()
 
+yes_game_balance :: Text
+yes_game_balance = "Yes the game balance will be fix with this update"
 processMessage :: Text -> IO ()
 processMessage v = case (getSenderId v) of
                     Just x -> do
                             case (getMessageText v) of
-                                Just "DemoPreRegistration" -> startPreRegistrationAnnouncement v
-                                Just "Yes"          -> contPreRegistrationAnnouncement x'
-                                Just "DemoUpdate"   -> demoUpdate x'
-                                Just "DemoShare"    -> demoShare x'
-                                _                   -> postMessage x' "WARNING:INVALID MESSAGE DEBUG CMD"
+                                Just "Yes"              -> contPreRegistrationAnnouncement x'
+                                Just "DemoUpdate"       -> postFixUpdateRequestButton x'
+                                Just "Yes for update"   -> demoUpdate x'
+                                Just "DemoShare"        -> demoShare x'
+                                Just yes_game_balance   -> postMessage x' "Thank you for the feedback"
+                                _                       -> postMessage x' "WARNING:INVALID MESSAGE DEBUG CMD"
                             where x' = unpack x
                     Nothing -> return ()
+
+processTrigger :: Text -> Text -> IO ()
+processTrigger psid mode = case mode of
+                            "DemoUpdate"          -> postFixUpdateRequestButton psid'
+                            "DemoPreRegistration" -> startPreRegistrationAnnouncement psid
+                            _                     -> putStrLn "Invalid trigger"
+                           where psid' = unpack psid
+
 
 formatMessage :: String -> String
 formatMessage message = foldr replacement message replacementInput

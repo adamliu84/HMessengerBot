@@ -12,6 +12,7 @@ import qualified Data.Conduit.Text as CT (decode, utf8)
 import qualified Data.Conduit.List as CL (consume)
 import           Data.Conduit (runConduit, (.|))
 import qualified Parrot
+import qualified GameFlow
 import           MessengerProc
 import           WebhookUtil
 import           Control.Monad (forM_)
@@ -30,6 +31,7 @@ mkYesod "App" [parseRoutes|
 /hm_wh     WebhookR GET POST
 /test      TestR
 /duck_test DuckTestR POST
+/game_flow GameFlowR GET
 |]
 
 getWebhookR :: Handler Text
@@ -73,6 +75,17 @@ postDuckTestR = do
     quack <- lookupPostParam "quack"
     case quack of
         Just v  -> Parrot.ducktest v
+        _       -> return ()
+
+getGameFlowR :: Handler ()
+getGameFlowR = do
+    psid <- lookupGetParam "psid"
+    case psid of
+        Just p  -> do
+            mode <- lookupGetParam "mode"
+            case mode of
+                Just m -> liftIO $ GameFlow.processTrigger p m
+                _      -> return ()
         _       -> return ()
 
 main :: IO ()
